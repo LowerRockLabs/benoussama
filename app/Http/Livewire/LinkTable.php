@@ -58,8 +58,8 @@ class LinkTable extends DataTableComponent
             ->setSingleSortingDisabled()
             ->setOfflineIndicatorEnabled()
             ->setQueryStringDisabled()
-            ->setEagerLoadAllRelationsEnabled()
-            ->setFilterLayoutSlideDown();
+            ->setEagerLoadAllRelationsEnabled();
+        $this->setFilterLayoutSlideDown();
     }
 
     public function builder(): Builder
