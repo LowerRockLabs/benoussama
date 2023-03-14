@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
         $sql = file_get_contents($path);
         DB::unprepared($sql);
 
-        Link::factory(20)->create();
-        Order::factory(50)->create();
+        Link::factory(20000)->create();
+        Order::factory(500)->create();
     }
 }
