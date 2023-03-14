@@ -251,3 +251,4 @@ INSERT INTO `countries` (`id`, `code`, `name`) VALUES
 (199, 'ZA', 'South Africa'),
 (248, 'ZM', 'Zambia'),
 (249, 'ZW', 'Zimbabwe');
+UPDATE links SET country_id = (SELECT id FROM countries WHERE country = links.country);

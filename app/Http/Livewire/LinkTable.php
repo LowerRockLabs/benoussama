@@ -60,11 +60,8 @@ class LinkTable extends DataTableComponent
             ->setSingleSortingDisabled()
             ->setOfflineIndicatorEnabled()
             ->setQueryStringDisabled()
-            ->setEagerLoadAllRelationsEnabled()
             // ->setFilterLayoutSlideDown()
-            ->setAdditionalSelects([
-                'links.price as max_price',
-            ]);
+            ->setEagerLoadAllRelationsEnabled();
 
         if (empty($this->arrayOfCountries)) {
             $this->arrayOfCountries = Country::select('id', 'name', 'code')
@@ -180,10 +177,10 @@ class LinkTable extends DataTableComponent
         return [
 
             SmartSelectFilter::make('Country', 'cuntry')
+                ->config(['displayHtmlName' => false])
                 ->options(
                     $this->arrayOfCountries
                 )
-                ->config(['displayHtmlName' => false])
                 ->filter(function (Builder $builder, array $values) {
                     $builder->whereIn('country_id', $values);
                 }),
