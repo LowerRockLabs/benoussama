@@ -9,8 +9,10 @@
         <div class="mx-auto sm:px-6 lg:px-8">
             <div class="p-10 overflow-hidden bg-white shadow-xl sm:rounded-lg">
                 <livewire:link-table />
-
             </div>
+        </div>
+        <div class="w-80">
+
         </div>
     </div>
 </x-app-layout>

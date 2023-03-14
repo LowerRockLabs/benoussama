@@ -16,7 +16,10 @@ use Rappasoft\LaravelLivewireTables\Views\Filters\NumberFilter;
 use Rappasoft\LaravelLivewireTables\Views\Filters\SelectFilter;
 use Rappasoft\LaravelLivewireTables\Views\Filters\TextFilter;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
-
+use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\DateRangeFilter;
+use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\NumberRangeFilter;
+use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\SlimSelectFilter;
+use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\SmartSelectFilter;
 
 class LinkTable extends DataTableComponent
 {
@@ -24,6 +27,8 @@ class LinkTable extends DataTableComponent
     use LivewireAlert;
 
     protected $model = Link::class;
+
+    public $filterData = [];
 
     public array $arrayOfCountries = [];
 
@@ -47,11 +52,6 @@ class LinkTable extends DataTableComponent
         $this->alert('success', "Order {$order->id} created Successfully!");
     }
 
-    public function mount()
-    {
-        $this->arrayOfCountries = Link::select('cuntry')->distinct()->pluck('cuntry')->toArray();
-    }
-
     public function configure(): void
     {
         $this->setPrimaryKey('id')
@@ -59,7 +59,20 @@ class LinkTable extends DataTableComponent
             ->setOfflineIndicatorEnabled()
             ->setQueryStringDisabled()
             ->setEagerLoadAllRelationsEnabled();
-        $this->setFilterLayoutSlideDown();
+        // $this->setFilterLayoutSlideDown();
+
+        // $this->arrayOfCountries = Link::select('cuntry')->distinct()->pluck('cuntry')->toArray();
+        $this->arrayOfCountries = Link::select('id', 'cuntry')
+            ->distinct()
+            ->orderBy('cuntry')
+            ->get()
+            ->map(function ($link) {
+                $countryValue['id'] = $link->id;
+                $countryValue['name'] = $link->cuntry;
+                return $countryValue;
+            })
+            ->keyBy('id')
+            ->toArray();
     }
 
     public function builder(): Builder
@@ -94,7 +107,13 @@ class LinkTable extends DataTableComponent
 
             Column::make("Site", "site")
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->secondaryHeader(
+                    $this->getFilterByKey('site')
+                )
+                ->footer(
+                    $this->getFilterByKey('site')
+                ),
 
             Column::make("Price", "price")
                 ->sortable()
@@ -125,7 +144,13 @@ class LinkTable extends DataTableComponent
                         }
                     }
                 )
-                ->html(),
+                ->html()
+                ->secondaryHeader(
+                    $this->getFilterByKey('purchased_before')
+                )
+                ->footer(
+                    $this->getFilterByKey('purchased_before')
+                ),
 
             Column::make("Country", "cuntry")
                 ->sortable()
@@ -133,53 +158,62 @@ class LinkTable extends DataTableComponent
 
             Column::make("Industry", "industry")
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->secondaryHeader(
+                    $this->getFilterByKey('industry')
+                )
+                ->footer(
+                    $this->getFilterByKey('industry')
+                ),
         ];
     }
 
     public function filters(): array
     {
         return [
-            MultiSelectDropdownFilter::make('Country', 'cuntry')
+            SmartSelectFilter::make('Country', 'cuntry')
                 ->options(
                     $this->arrayOfCountries
                 )
-                ->filter(function (Builder $builder, array  $value) {
-                    // get the values as text from the arrayOfCountries array
-                    $values = array_map(function ($value) {
-                        return $this->arrayOfCountries[$value];
-                    }, $value);
+                ->filter(function (Builder $builder, array $values) {
                     $builder->whereIn('cuntry', $values);
                 }),
 
-            //AS
-            NumberFilter::make('AS bigger than')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('as', '>=', (int)$value);
+            NumberRangeFilter::make('AS Range')
+                ->options(
+                    [
+                        'min' => 100,
+                        'max' => 1000
+                    ]
+                )
+                ->filter(function (Builder $builder, array $numberRange) {
+                    $builder->where('as', '>=', $numberRange['min'])->where('as', '<=', $numberRange['max']);
                 }),
-            NumberFilter::make('AS Less than')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('as', '<=', (int)$value);
+            NumberRangeFilter::make('price Range')
+                ->options(
+                    [
+                        'min' => 100,
+                        'max' => 1000
+                    ]
+                )
+                ->filter(function (Builder $builder, array $numberRange) {
+                    $builder->where('price', '>=', $numberRange['min'])->where('price', '<=', $numberRange['max']);
+                }),
+            NumberRangeFilter::make('traffic Range')
+                ->options(
+                    [
+                        'min' => 100,
+                        'max' => 1000
+                    ]
+                )
+                ->filter(function (Builder $builder, array $numberRange) {
+                    $builder->where('traffic', '>=', $numberRange['min'])->where('traffic', '<=', $numberRange['max']);
                 }),
 
-            //Price
-            NumberFilter::make('Price bigger than')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('price', '>=', (int)$value);
-                }),
-            NumberFilter::make('Price Less than')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('price', '<=', (int)$value);
-                }),
-
-            // NumberFilter::make('ID')
-            //     ->filter(function (Builder $builder, string $value) {
-            //         $builder->where('id', (int)$value);
-            //     }),
 
 
-
-            TextFilter::make('INDUSTRY')
+            TextFilter::make('INDUSTRY', 'industry')
+                ->hiddenFromMenus()
                 ->config([
                     'placeholder' => 'Search industry',
                     'maxlength' => '25',
@@ -188,17 +222,8 @@ class LinkTable extends DataTableComponent
                     $builder->where('industry', 'like', '%' . $value . '%');
                 }),
 
-            //Traffic
-            NumberFilter::make('Traffic bigger than')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('traffic', '>=', (int)$value);
-                }),
-            NumberFilter::make('Traffic Less than')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('traffic', '<=', (int)$value);
-                }),
-
-            TextFilter::make('Website')
+            TextFilter::make('Website', 'site')
+                ->hiddenFromMenus()
                 ->config([
                     'placeholder' => 'Search Site',
                     'maxlength' => '25',
@@ -207,17 +232,13 @@ class LinkTable extends DataTableComponent
                     $builder->where('site', 'like', '%' . $value . '%');
                 }),
 
-            // add a date from and a date to filter
-            DateFilter::make('Date From', 'date_from')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('created_at', '>=', $value);
-                }),
-            DateFilter::make('Date To', 'date_to')
-                ->filter(function (Builder $builder, string $value) {
-                    $builder->where('created_at', '<=', $value);
+            DateRangeFilter::make('Created Date')
+                ->filter(function (Builder $builder, array $dateRange) {
+                    $builder->whereDate('created_at', '>=', $dateRange['minDate'])->whereDate('created_at', '<=', $dateRange['maxDate']);
                 }),
 
             SelectFilter::make('Purchased Before')
+                ->hiddenFromMenus()
                 ->options([
                     '' => 'All',
                     'yes' => 'Yes',
