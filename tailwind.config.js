@@ -8,8 +8,9 @@ module.exports = {
         "./storage/framework/views/*.php",
         "./resources/views/**/*.blade.php",
         "./vendor/rappasoft/laravel-livewire-tables/resources/views/**/*.blade.php",
+        "./vendor/lowerrocklabs/laravel-livewire-tables-advanced-filters/resources/views/**/*.blade.php",
     ],
-
+    darkMode: 'class',
     theme: {
         extend: {
             fontFamily: {
@@ -22,5 +23,5 @@ module.exports = {
         require("@tailwindcss/forms"),
         require("@tailwindcss/typography"),
     ],
-    safelist: ["w-80"],
+    safelist: ["md:w-80"],
 };

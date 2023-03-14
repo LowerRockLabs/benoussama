@@ -31,4 +31,9 @@ class Link extends Model
     {
         return $this->orders->where('user_id', auth()->id())->isEmpty();
     }
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
 }

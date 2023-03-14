@@ -2,7 +2,7 @@
 
 // config for LowerRockLabs/LaravelLivewireTablesAdvancedFilters
 return [
-    'customFilterMenuWidth' => 'w-80',
+    'customFilterMenuWidth' => 'md:w-80',
     'slimSelect' => [
         'defaults' => ['test' => 'test'],
     ],
@@ -34,8 +34,8 @@ return [
     ],
     'dateRange' => [
         'defaults' => [
-            'earliestDate' => null,
-            'latestDate' => null,
+            'earliestDate' => '',
+            'latestDate' => '',
             'allowInput' => true,
             'altFormat' => 'F j, Y',
             'ariaDateFormat' => 'F j, Y',
