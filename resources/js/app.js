@@ -6,6 +6,7 @@ import SlimSelect from "slim-select";
 import "../../vendor/lowerrocklabs/laravel-livewire-tables-advanced-filters/resources/css/numberRange.min.css";
 import flatpickr from "flatpickr";
 import "/node_modules/flag-icons/css/flag-icons.min.css";
+import "flatpickr/dist/flatpickr.min.css";
 
 // window.flatpickr = flatpickr;
 window.SlimSelect = SlimSelect;

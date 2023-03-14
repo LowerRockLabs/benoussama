@@ -7,6 +7,8 @@
 
     <div class="py-12">
         <div class="mx-auto sm:px-6 lg:px-8">
+            here goes the flag
+            <span class='fi fi-al'></span>
             <div class="p-10 overflow-hidden bg-white shadow-xl sm:rounded-lg">
                 <livewire:link-table />
             </div>

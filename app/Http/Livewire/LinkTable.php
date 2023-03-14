@@ -17,6 +17,7 @@ use Rappasoft\LaravelLivewireTables\Views\Filters\NumberFilter;
 use Rappasoft\LaravelLivewireTables\Views\Filters\SelectFilter;
 use Rappasoft\LaravelLivewireTables\Views\Filters\TextFilter;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
+use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\DatePickerFilter;
 use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\DateRangeFilter;
 use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\NumberRangeFilter;
 use LowerRockLabs\LaravelLivewireTablesAdvancedFilters\SlimSelectFilter;
@@ -59,24 +60,25 @@ class LinkTable extends DataTableComponent
             ->setSingleSortingDisabled()
             ->setOfflineIndicatorEnabled()
             ->setQueryStringDisabled()
-            ->setEagerLoadAllRelationsEnabled();
-        // $this->setFilterLayoutSlideDown();
+            ->setEagerLoadAllRelationsEnabled()
+            // ->setFilterLayoutSlideDown()
+            ->setAdditionalSelects([
+                'links.price as max_price',
+            ]);
 
-        // $this->arrayOfCountries = Link::select('cuntry')->distinct()->pluck('cuntry')->toArray();
-        if (empty($this->arrayOfCountries))
-        {
-            $this->arrayOfCountries = Country::select('id','name','code')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($country) {
-                $countryValue['id'] = $country->id;
-                $countryValue['name'] = $country->name;
-                $countryValue['htmlName'] = "<span><span class='fi fi-".strtolower($country->code)."'></span>".$country->name."</span>";
+        if (empty($this->arrayOfCountries)) {
+            $this->arrayOfCountries = Country::select('id', 'name', 'code')
+                ->orderBy('name')
+                ->get()
+                ->map(function ($country) {
+                    $countryValue['id'] = $country->id;
+                    $countryValue['name'] = $country->name;
+                    $countryValue['htmlName'] = "<span><span class='fi fi-" . strtolower($country->code) . "'></span>" . $country->name . "</span>";
 
-                return $countryValue;
-            })
-            ->keyBy('id')
-            ->toArray();
+                    return $countryValue;
+                })
+                ->keyBy('id')
+                ->toArray();
         }
     }
 
@@ -93,7 +95,7 @@ class LinkTable extends DataTableComponent
             Column::make("Cart")
                 ->label(
                     function ($row, Column $column) {
-                        if ($row->orders->where('user_id', '2')->isEmpty()) {
+                        if ($row->orders->where('user_id', auth()->id())->isEmpty()) {
                             return '<svg wire:click="createOrder(' . $row->id . ')" class="w-5 h-5 text-blue-600 cursor-pointer" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
                           </svg>';
@@ -137,7 +139,7 @@ class LinkTable extends DataTableComponent
                 ->eagerLoadRelations()
                 ->label(
                     function ($row, Column $column) {
-                        if ($row->orders->where('user_id', '2')->isEmpty()) {
+                        if ($row->orders->where('user_id', auth()->id())->isEmpty()) {
                             return '<p class="text-red-500"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg></p>';
@@ -157,7 +159,7 @@ class LinkTable extends DataTableComponent
                     $this->getFilterByKey('purchased_before')
                 ),
 
-            Column::make("Country", "cuntry")
+            Column::make("Country", "country.name")
                 ->sortable()
                 ->searchable(),
 
@@ -176,16 +178,17 @@ class LinkTable extends DataTableComponent
     public function filters(): array
     {
         return [
+
             SmartSelectFilter::make('Country', 'cuntry')
-            ->config([        'displayHtmlName' => true,            ])
                 ->options(
                     $this->arrayOfCountries
                 )
+                ->config(['displayHtmlName' => false])
                 ->filter(function (Builder $builder, array $values) {
                     $builder->whereIn('country_id', $values);
                 }),
 
-            NumberRangeFilter::make('AS Range')
+            NumberRangeFilter::make('AS Range', 'as_range')
                 ->config(
                     [
                         'minRange' => 100,
@@ -234,6 +237,18 @@ class LinkTable extends DataTableComponent
                     $builder->where('industry', 'like', '%' . $value . '%');
                 }),
 
+            DateRangeFilter::make('Created Date')
+                ->config([
+                    'ariaDateFormat' => 'F j, Y',
+                    'dateFormat' => 'Y-m-d',
+                    'earliestDate' => '2020-01-01',
+                    'latestDate' => '2023-07-01',
+                ])
+
+                ->filter(function (Builder $builder, array $dateRange) {
+                    $builder->whereDate('links.created_at', '>=', $dateRange['minDate'])->whereDate('links.created_at', '<=', $dateRange['maxDate']);
+                }),
+
             TextFilter::make('Website', 'site')
                 ->hiddenFromMenus()
                 ->config([
@@ -244,17 +259,6 @@ class LinkTable extends DataTableComponent
                     $builder->where('site', 'like', '%' . $value . '%');
                 }),
 
-            DateRangeFilter::make('Created Date')
-            ->config([
-                'ariaDateFormat' => 'F j, Y',
-                'dateFormat' => 'Y-m-d',
-                'earliestDate' => '2020-01-01',
-                'latestDate' => '2023-07-01',
-            ])
-
-                ->filter(function (Builder $builder, array $dateRange) {
-                    $builder->whereDate('created_at', '>=', $dateRange['minDate'])->whereDate('created_at', '<=', $dateRange['maxDate']);
-                }),
 
             SelectFilter::make('Purchased Before')
                 ->hiddenFromMenus()
@@ -266,11 +270,11 @@ class LinkTable extends DataTableComponent
                 ->filter(function (Builder $builder, string $value) {
                     if ($value === 'yes') {
                         $builder->whereHas('orders', function ($query) {
-                            $query->where('user_id', '2');
+                            $query->where('user_id', auth()->id());
                         });
                     } elseif ($value === 'no') {
                         $builder->whereDoesntHave('orders', function ($query) {
-                            $query->where('user_id', '2');
+                            $query->where('user_id', auth()->id());
                         });
                     }
                 })
