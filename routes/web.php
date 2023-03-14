@@ -19,18 +19,12 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified'
-])->group(function () {
-    Route::get('/dashboard', function () {
+Route::get('/dashboard', function () {
 
-        // dd(
-        //     Link::whereId(2187)->first()->orders,
-        //     // Order::where('link_id', 2187)->get()
-        // );
+    // dd(
+    //     Link::whereId(2187)->first()->orders,
+    //     // Order::where('link_id', 2187)->get()
+    // );
 
-        return view('dashboard');
-    })->name('dashboard');
-});
+    return view('dashboard');
+})->name('dashboard');
