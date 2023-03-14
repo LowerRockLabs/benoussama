@@ -17,6 +17,7 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
+        "flag-icons": "^6.6.6",
         "flatpickr": "^4.6.13",
         "slim-select": "^2.4.2"
     }

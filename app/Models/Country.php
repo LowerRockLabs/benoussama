@@ -11,7 +11,7 @@ class Country extends Model
 
     protected $primaryKey = 'id';
 
-    protected $fillable = ['id', 'name'];
+    protected $fillable = ['id', 'code','name'];
 
     protected $table = 'countries';
 
