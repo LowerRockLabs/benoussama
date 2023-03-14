@@ -1,10 +1,10 @@
-INSERT OR UPDATE INTO `countries` (`id`, `code`, `name`) VALUES
+INSERT INTO `countries` (`id`, `code`, `name`) VALUES
 (6, 'AD', 'Andorra');
-INSERT OR UPDATE INTO `countries` (`id`, `code`, `name`) VALUES
+INSERT INTO `countries` (`id`, `code`, `name`) VALUES
 (236, 'AE', 'United Arab Emirates');
-INSERT OR UPDATE INTO `countries` (`id`, `code`, `name`) VALUES
+INSERT INTO `countries` (`id`, `code`, `name`) VALUES
 (1, 'AF', 'Afghanistan');
-INSERT OR UPDATE INTO `countries` (`id`, `code`, `name`) VALUES
+INSERT INTO `countries` (`id`, `code`, `name`) VALUES
 (10, 'AG', 'Antigua & Barbuda'),
 (8, 'AI', 'Anguilla'),
 (3, 'AL', 'Albania'),

@@ -65,12 +65,14 @@ class LinkTable extends DataTableComponent
         // $this->arrayOfCountries = Link::select('cuntry')->distinct()->pluck('cuntry')->toArray();
         if (empty($this->arrayOfCountries))
         {
-            $this->arrayOfCountries = Country::select('id','name')
+            $this->arrayOfCountries = Country::select('id','name','code')
             ->orderBy('name')
             ->get()
             ->map(function ($country) {
                 $countryValue['id'] = $country->id;
                 $countryValue['name'] = $country->name;
+                $countryValue['htmlName'] = "<span><span class='fi fi-".strtolower($country->code)."'></span>".$country->name."</span>";
+
                 return $countryValue;
             })
             ->keyBy('id')
@@ -175,6 +177,7 @@ class LinkTable extends DataTableComponent
     {
         return [
             SmartSelectFilter::make('Country', 'cuntry')
+            ->config([        'displayHtmlName' => true,            ])
                 ->options(
                     $this->arrayOfCountries
                 )
