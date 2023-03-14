@@ -6,6 +6,7 @@ use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
 use App\Models\Link;
 use App\Models\Order;
+use App\Models\Country;
 use Illuminate\Database\Eloquent\Builder;
 use Rappasoft\LaravelLivewireTables\Views\Columns\BooleanColumn;
 use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
@@ -64,18 +65,15 @@ class LinkTable extends DataTableComponent
         // $this->arrayOfCountries = Link::select('cuntry')->distinct()->pluck('cuntry')->toArray();
         if (empty($this->arrayOfCountries))
         {
-            $count = 0;
-            $this->arrayOfCountries = Link::select('cuntry')
-            ->distinct()
-            ->orderBy('cuntry')
+            $this->arrayOfCountries = Country::select('id','name')
+            ->orderBy('name')
             ->get()
-            ->map(function ($link) use ($count) {
-                $countryValue['id'] = $this->count;
-                $this->count++;
-                $countryValue['name'] = $link->cuntry;
-                $count++;
+            ->map(function ($country) {
+                $countryValue['id'] = $country->id;
+                $countryValue['name'] = $country->name;
                 return $countryValue;
             })
+            ->keyBy('id')
             ->toArray();
         }
     }
@@ -181,7 +179,7 @@ class LinkTable extends DataTableComponent
                     $this->arrayOfCountries
                 )
                 ->filter(function (Builder $builder, array $values) {
-                    $builder->whereIn('cuntry', $values);
+                    $builder->whereIn('country_id', $values);
                 }),
 
             NumberRangeFilter::make('AS Range')

@@ -6,7 +6,9 @@ namespace Database\Seeders;
 
 use App\Models\Link;
 use App\Models\Order;
+use App\Models\Country;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -22,7 +24,11 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
-        Link::factory(20000)->create();
-        Order::factory(500)->create();
+        $path = 'database/countries.sql';
+        $sql = file_get_contents($path);
+        DB::unprepared($sql);
+
+        Link::factory(20)->create();
+        Order::factory(50)->create();
     }
 }
