@@ -8,6 +8,7 @@ use App\Models\Link;
 use App\Models\Order;
 use App\Models\Country;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Rappasoft\LaravelLivewireTables\Views\Columns\BooleanColumn;
 use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
 use Rappasoft\LaravelLivewireTables\Views\Filters\DateFilter;
@@ -33,6 +34,10 @@ class LinkTable extends DataTableComponent
     public $filterData = [];
 
     public array $arrayOfCountries = [];
+
+    public int $maxAs, $minAs;
+    public int $maxTraffic, $minTraffic;
+    public int $maxPrice, $minPrice;
 
     protected $listeners = [
         'createOrder'
@@ -77,6 +82,15 @@ class LinkTable extends DataTableComponent
                 ->keyBy('id')
                 ->toArray();
         }
+
+        $this->maxAs = DB::select("select max(`as`) as 'maxAS' from links")[0]->maxAS;
+        $this->minAs = DB::select("select min(`as`) as 'minAs' from links")[0]->minAs;
+
+        $this->maxTraffic = DB::select("select max(`traffic`) as 'maxTraffic' from links")[0]->maxTraffic;
+        $this->minTraffic = DB::select("select min(`traffic`) as 'minTraffic' from links")[0]->minTraffic;
+
+        $this->maxPrice = DB::select("select max(`price`) as 'maxPrice' from links")[0]->maxPrice;
+        $this->minPrice = DB::select("select min(`price`) as 'minAs' from links")[0]->minAs;
     }
 
     public function builder(): Builder
@@ -177,7 +191,7 @@ class LinkTable extends DataTableComponent
         return [
 
             SmartSelectFilter::make('Country', 'cuntry')
-                ->config(['displayHtmlName' => false])
+                ->config(['displayHtmlName' => true])
                 ->options(
                     $this->arrayOfCountries
                 )
@@ -188,34 +202,30 @@ class LinkTable extends DataTableComponent
             NumberRangeFilter::make('AS Range', 'as_range')
                 ->config(
                     [
-                        'minRange' => 100,
-                        'maxRange' => 1000
-                    ]
-                )
-                ->options(
-                    [
-                        'min' => 100,
-                        'max' => 1000
+                        'minRange' => $this->minAs ?? 0,
+                        'maxRange' => $this->maxAs ?? 10000
                     ]
                 )
                 ->filter(function (Builder $builder, array $numberRange) {
                     $builder->where('as', '>=', $numberRange['min'])->where('as', '<=', $numberRange['max']);
                 }),
+
             NumberRangeFilter::make('price Range')
-                ->options(
+                ->config(
                     [
-                        'min' => 100,
-                        'max' => 1000
+                        'minRange' => $this->minPrice ?? 0,
+                        'maxRange' => $this->maxPrice ?? 10000
                     ]
                 )
                 ->filter(function (Builder $builder, array $numberRange) {
                     $builder->where('price', '>=', $numberRange['min'])->where('price', '<=', $numberRange['max']);
                 }),
+
             NumberRangeFilter::make('traffic Range')
-                ->options(
+                ->config(
                     [
-                        'min' => 100,
-                        'max' => 1000
+                        'minRange' => $this->minTraffic ?? 0,
+                        'maxRange' => $this->maxTraffic ?? 10000
                     ]
                 )
                 ->filter(function (Builder $builder, array $numberRange) {
