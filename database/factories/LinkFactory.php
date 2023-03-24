@@ -23,8 +23,11 @@ class LinkFactory extends Factory
             'as' => $this->faker->numberBetween(100, 1000),
             'traffic' => $this->faker->numberBetween(100, 1000),
             'cuntry' => $this->faker->country,
-            'country_id' => Country::inRandomOrder()->select('id')->first()->id,
+            'country_id' => $this->faker->numberBetween(1, 249), // Country::inRandomOrder()->select('id')->first()->id,
             'industry' => $this->faker->jobTitle,
+            'created_at' => $this->faker->dateTimeThisYear(),
+            'updated_at' => $this->faker->dateTimeThisYear(),
+
         ];
     }
 }
