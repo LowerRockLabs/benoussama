@@ -34,7 +34,7 @@ class LinkTable extends DataTableComponent
     public array $cartItems = [];
 
     public array $arrayOfCountries = [];
-    protected int $maxASRange = 0;
+    public int $maxASRange = 0;  // Changed to Public to maintain state
 
     protected $listeners = [
         'createOrder'
@@ -68,8 +68,8 @@ class LinkTable extends DataTableComponent
             ->setOfflineIndicatorEnabled()
             ->setQueryStringDisabled()
             // ->setFilterLayoutSlideDown()
-            ->setTableAttributes(["x-data" => "{ cartItems: \$wire.entangle('cartItems') }"])
-            ->setEagerLoadAllRelationsEnabled();
+            ->setTableAttributes(["x-data" => "{ cartItems: \$wire.entangle('cartItems') }"]);
+            //->setEagerLoadAllRelationsEnabled(); // Not needed when you are including the relationships anyway!
 
         if (empty($this->arrayOfCountries)) {
             $this->arrayOfCountries = Country::select('id', 'name', 'code')
@@ -110,19 +110,19 @@ class LinkTable extends DataTableComponent
                 ->footer(
                     $this->getFilterByKey('site')
                 ),
-                Column::make("Total Price")
+                Column::make("Total Orders")
                 ->label(function ($row, $column) {
                     return $row->orders->sum('price') ?? '0';
                 }),
-                Column::make("Status 1 or 2")
+                Column::make("Total - Status 1 or 2")
                 ->label(function ($row, $column) {
                     return $row->orders->whereIn('status',['1','2'])->sum('price') ?? '0';
                 }),
-                Column::make("Status 3 or 4")
+                Column::make("Total - Status 3 or 4")
                 ->label(function ($row, $column) {
                     return $row->orders->whereIn('status',['3','4'])->sum('price') ?? '0';
                 }),
-                Column::make("Status 5")
+                Column::make("Total - Status 5")
                 ->label(function ($row, $column) {
                     return $row->orders->where('status', 5)->sum('price') ?? '0';
                 }),
@@ -132,23 +132,7 @@ class LinkTable extends DataTableComponent
                 ->format(function ($value, $column, $row) {
                     return $value . ' €';
                 }),
-
-            Column::make("Historic Orders")
-            ->sortable()
-            ->label(function ($row, $column) {
-                if ($row->orders) { return implode(',', $row->orders->pluck('id')->toArray()); }
-            }),
-
-            Column::make("Filter Count")
-            ->label(function ($row, $column) {
-                return $row->links_orders_count ?? '0';
-            }),
-            Column::make("Total I")
-            ->label(function ($row, $column) {
-                return $row->total_orders ?? '0';
-            }),
-            
-                
+               
 
             Column::make("Authortiy Score", "as")
                 ->sortable(),
