@@ -34,6 +34,7 @@ class LinkTable extends DataTableComponent
     public array $cartItems = [];
 
     public array $arrayOfCountries = [];
+    protected int $maxASRange = 0;
 
     protected $listeners = [
         'createOrder'
@@ -58,7 +59,10 @@ class LinkTable extends DataTableComponent
 
     public function configure(): void
     {
- 
+        if ($this->maxASRange == 0)
+        { 
+            $this->maxASRange = \Illuminate\Support\Facades\DB::select("select max(`as`) as 'maxAS' from links")[0]->maxAS;
+        }
         $this->setPrimaryKey('id')
             ->setSingleSortingDisabled()
             ->setOfflineIndicatorEnabled()
@@ -83,12 +87,7 @@ class LinkTable extends DataTableComponent
         }
     }
 
-    public function builder(): Builder
-    {
-        return Link::query()
-            ->with(['orders']);
-        // ->groupBy('site');
-    }
+
 
     public function columns(): array
     {
@@ -98,7 +97,7 @@ class LinkTable extends DataTableComponent
                 fn($row, Column $column) => view('addToCartButton')->withValue($row->id)
             ),
 
-            Column::make("#", "id")
+            Column::make("ID", "id")
                 ->sortable()
                 ->searchable(),
 
@@ -111,12 +110,45 @@ class LinkTable extends DataTableComponent
                 ->footer(
                     $this->getFilterByKey('site')
                 ),
+                Column::make("Total Price")
+                ->label(function ($row, $column) {
+                    return $row->orders->sum('price') ?? '0';
+                }),
+                Column::make("Status 1 or 2")
+                ->label(function ($row, $column) {
+                    return $row->orders->whereIn('status',['1','2'])->sum('price') ?? '0';
+                }),
+                Column::make("Status 3 or 4")
+                ->label(function ($row, $column) {
+                    return $row->orders->whereIn('status',['3','4'])->sum('price') ?? '0';
+                }),
+                Column::make("Status 5")
+                ->label(function ($row, $column) {
+                    return $row->orders->where('status', 5)->sum('price') ?? '0';
+                }),
 
             Column::make("Price", "price")
                 ->sortable()
                 ->format(function ($value, $column, $row) {
                     return $value . ' €';
                 }),
+
+            Column::make("Historic Orders")
+            ->sortable()
+            ->label(function ($row, $column) {
+                if ($row->orders) { return implode(',', $row->orders->pluck('id')->toArray()); }
+            }),
+
+            Column::make("Filter Count")
+            ->label(function ($row, $column) {
+                return $row->links_orders_count ?? '0';
+            }),
+            Column::make("Total I")
+            ->label(function ($row, $column) {
+                return $row->total_orders ?? '0';
+            }),
+            
+                
 
             Column::make("Authortiy Score", "as")
                 ->sortable(),
@@ -167,6 +199,7 @@ class LinkTable extends DataTableComponent
 
     public function filters(): array
     {
+        
         return [
 
             SmartSelectFilter::make('Country', 'cuntry')
@@ -182,18 +215,13 @@ class LinkTable extends DataTableComponent
                 ->config(
                     [
                         'minRange' => 100,
-                        'maxRange' => 1000
-                    ]
-                )
-                ->options(
-                    [
-                        'min' => 100,
-                        'max' => 1000
+                        'maxRange' => $this->maxASRange
                     ]
                 )
                 ->filter(function (Builder $builder, array $numberRange) {
                     $builder->where('as', '>=', $numberRange['min'])->where('as', '<=', $numberRange['max']);
                 }),
+
             NumberRangeFilter::make('price Range')
                 ->options(
                     [
@@ -204,6 +232,7 @@ class LinkTable extends DataTableComponent
                 ->filter(function (Builder $builder, array $numberRange) {
                     $builder->where('price', '>=', $numberRange['min'])->where('price', '<=', $numberRange['max']);
                 }),
+
             NumberRangeFilter::make('traffic Range')
                 ->options(
                     [
@@ -227,16 +256,17 @@ class LinkTable extends DataTableComponent
                     $builder->where('industry', 'like', '%' . $value . '%');
                 }),
 
-            DateRangeFilter::make('Created Date')
+            DateRangeFilter::make('Order Date','order_date')
                 ->config([
                     'ariaDateFormat' => 'F j, Y',
                     'dateFormat' => 'Y-m-d',
                     'earliestDate' => '2020-01-01',
                     'latestDate' => '2023-07-01',
-                ])
-
-                ->filter(function (Builder $builder, array $dateRange) {
-                    $builder->whereDate('links.created_at', '>=', $dateRange['minDate'])->whereDate('links.created_at', '<=', $dateRange['maxDate']);
+                ])->filter(function(Builder $builder, array $date_range) {
+                    $builder->withWhereHas('orders', function ($builder) use ($date_range) {
+                        $builder->whereDate('orders.created_at', '>=', $date_range['minDate'])
+                                ->whereDate('orders.created_at', '<=', $date_range['maxDate']);
+                    });
                 }),
 
             TextFilter::make('Website', 'site')
@@ -267,11 +297,21 @@ class LinkTable extends DataTableComponent
                             $query->where('user_id', auth()->id());
                         });
                     }
-                })
-
-
-
-
+                }),
         ];
+    }
+
+    public function builder(): Builder
+    {
+        return Link::when(!$this->getAppliedFilterWithValue('order_date'), fn ($query) => 
+            $query->withWhereHas('orders')
+        )
+        ->withSum([
+            'orders as orders_all_time_price'
+        ], 'price')        
+        ->withCount([
+            'orders as total_orders',
+        ]);
+        // ->groupBy('site');
     }
 }

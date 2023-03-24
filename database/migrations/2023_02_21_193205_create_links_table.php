@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('as');
             $table->integer('traffic');
             $table->string('cuntry');
+            $table->foreignIdFor(\App\Models\Country::class, 'country_id')->nullable();
             $table->string('industry');
             $table->timestamps();
         });

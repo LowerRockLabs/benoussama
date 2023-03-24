@@ -20,6 +20,10 @@ class OrderFactory extends Factory
             'link_id' => $this->faker->numberBetween(1, 20000),
             'price' => $this->faker->numberBetween(100, 1000),
             'user_id' => $this->faker->numberBetween(1, 10),
+            'status' => $this->faker->numberBetween(1, 5),
+            'created_at' => $this->faker->dateTimeThisYear(),
+            'updated_at' => $this->faker->dateTimeThisYear(),
+
         ];
     }
 }
