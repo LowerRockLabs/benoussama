@@ -17,9 +17,13 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'link_id' => $this->faker->numberBetween(1, 20000),
+            'link_id' => $this->faker->numberBetween(1, 5000),
             'price' => $this->faker->numberBetween(100, 1000),
             'user_id' => $this->faker->numberBetween(1, 10),
+            'status' => $this->faker->numberBetween(1, 5),
+            'created_at' => $this->faker->dateTimeThisYear(),
+            'updated_at' => $this->faker->dateTimeThisYear(),
+
         ];
     }
 }
