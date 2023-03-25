@@ -42,9 +42,9 @@ return [
             'dateFormat' => 'Y-m-d',
         ],
         // Set to true if you need to include the Flatpickr JS
-        'publishFlatpickrJS' => true,
+        'publishFlatpickrJS' => false,
         // Set to true if you need to include the Flatpickr CSS
-        'publishFlatpickrCSS' => true,
+        'publishFlatpickrCSS' => false,
     ],
     'datePicker' => [
         'defaults' => [
