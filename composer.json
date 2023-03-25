@@ -58,12 +58,10 @@
         "initial-setup": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "composer update",
-            "@php -r \"file_exists('database/database.sqlite') || touch database/database.sqlite\"",
             "@php artisan key:generate",
             "@php artisan migrate:fresh --seed",
             "npm i",
             "npm update",
-            "npm run production",
             "npm run dev",
             "@php artisan view:clear",
             "@php artisan clear-compiled",
