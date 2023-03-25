@@ -39,6 +39,7 @@ class LinkTable extends DataTableComponent
     public int $maxAs, $minAs;
     public int $maxTraffic, $minTraffic;
     public int $maxPrice, $minPrice;
+    public int $maxASRange = 0;  // Changed to Public to maintain state
 
     protected $listeners = [
         'createOrder'
@@ -53,7 +54,7 @@ class LinkTable extends DataTableComponent
         }
 
         $order = Order::create([
-            'user_id' => '1',
+            'user_id' => auth()->id(),
             'link_id' => $link->id,
             'price' =>  $link->price + 150,
         ]);
@@ -63,14 +64,19 @@ class LinkTable extends DataTableComponent
 
     public function configure(): void
     {
- 
+        if ($this->maxASRange == 0) {
+            $this->maxASRange = \Illuminate\Support\Facades\DB::select("select max(`as`) as 'maxAS' from links")[0]->maxAS;
+        }
         $this->setPrimaryKey('id')
+            ->setDefaultSort('as', 'desc')
             ->setSingleSortingDisabled()
             ->setOfflineIndicatorEnabled()
             ->setQueryStringDisabled()
             // ->setFilterLayoutSlideDown()
-            ->setTableAttributes(["x-data" => "{ cartItems: \$wire.entangle('cartItems') }"])
-            ->setEagerLoadAllRelationsEnabled();
+            ->setTableAttributes(["x-data" => "{ cartItems: \$wire.entangle('cartItems') }"]);
+        //->setEagerLoadAllRelationsEnabled(); // Not needed when you are including the relationships anyway!
+
+        // make default sorting with price
 
         if (empty($this->arrayOfCountries)) {
             $this->arrayOfCountries = Country::select('id', 'name', 'code')
@@ -97,22 +103,17 @@ class LinkTable extends DataTableComponent
         $this->minPrice = DB::select("select min(`price`) as 'minAs' from links")[0]->minAs;
     }
 
-    public function builder(): Builder
-    {
-        return Link::query()
-            ->with(['orders']);
-        // ->groupBy('site');
-    }
+
 
     public function columns(): array
     {
         return [
             Column::make("Cart")
-            ->label(
-                fn($row, Column $column) => view('addToCartButton')->withValue($row->id)
-            ),
+                ->label(
+                    fn ($row, Column $column) => view('addToCartButton')->withValue($row->id)
+                ),
 
-            Column::make("#", "id")
+            Column::make("ID", "id")
                 ->sortable()
                 ->searchable(),
 
@@ -126,11 +127,31 @@ class LinkTable extends DataTableComponent
                     $this->getFilterByKey('site')
                 ),
 
+            // The below columns use a relationship that has already been loaded by the Builder, so you can use any fields/functions, without needing extra DB queries
+            Column::make("Total Orders")
+                ->label(function ($row, $column) {
+                    return $row->orders->sum('price') ?? '0';
+                }),
+            Column::make("Total - Status 1 or 2")
+                ->label(function ($row, $column) {
+                    return $row->orders->whereIn('status', ['1', '2'])->sum('price') ?? '0';
+                }),
+            Column::make("Total - Status 3 or 4")
+                ->label(function ($row, $column) {
+                    return $row->orders->whereIn('status', ['3', '4'])->sum('price') ?? '0';
+                }),
+            Column::make("Total - Status 5")
+                ->label(function ($row, $column) {
+                    return $row->orders->where('status', 5)->sum('price') ?? '0';
+                }),
+            // End of Section
+
             Column::make("Price", "price")
                 ->sortable()
                 ->format(function ($value, $column, $row) {
                     return $value . ' €';
                 }),
+
 
             Column::make("Authortiy Score", "as")
                 ->sortable(),
@@ -145,13 +166,13 @@ class LinkTable extends DataTableComponent
                     function ($row, Column $column) {
                         if ($row->orders->where('user_id', auth()->id())->isEmpty()) {
                             return '<p class="text-red-500"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg></p>';
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg></p>';
                         } else {
                             return '<p class="flex items-center gap-2 text-green-500"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                          </svg> Order Id: ' . $row->orders->first()->id . '
-                          </p>';
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                            </svg> Order Id: ' . $row->orders->first()->id . '
+                            </p>';
                         }
                     }
                 )
@@ -181,6 +202,7 @@ class LinkTable extends DataTableComponent
 
     public function filters(): array
     {
+
         return [
 
             SmartSelectFilter::make('Country', 'cuntry')
@@ -195,8 +217,8 @@ class LinkTable extends DataTableComponent
             NumberRangeFilter::make('AS Range', 'as_range')
                 ->config(
                     [
-                        'minRange' => $this->minAs ?? 0,
-                        'maxRange' => $this->maxAs ?? 10000
+                        'minRange' => 100,
+                        'maxRange' => $this->maxASRange
                     ]
                 )
                 ->filter(function (Builder $builder, array $numberRange) {
@@ -237,16 +259,18 @@ class LinkTable extends DataTableComponent
                     $builder->where('industry', 'like', '%' . $value . '%');
                 }),
 
-            DateRangeFilter::make('Created Date')
+            DateRangeFilter::make('Order Date', 'order_date')
                 ->config([
                     'ariaDateFormat' => 'F j, Y',
                     'dateFormat' => 'Y-m-d',
-                    'earliestDate' => '2020-01-01',
-                    'latestDate' => '2023-07-01',
-                ])
-
-                ->filter(function (Builder $builder, array $dateRange) {
-                    $builder->whereDate('links.created_at', '>=', $dateRange['minDate'])->whereDate('links.created_at', '<=', $dateRange['maxDate']);
+                    // 'earliestDate' => '2020-01-01',
+                    // 'latestDate' => '2023-07-01',
+                ])->filter(function (Builder $builder, array $date_range) {
+                    // This will load all orders belonging to the link WHERE the date is in range, all other orders are excluded
+                    $builder->withWhereHas('orders', function ($builder) use ($date_range) {
+                        $builder->whereDate('orders.created_at', '>=', $date_range['minDate'])
+                            ->whereDate('orders.created_at', '<=', $date_range['maxDate']);
+                    });
                 }),
 
             TextFilter::make('Website', 'site')
@@ -277,11 +301,24 @@ class LinkTable extends DataTableComponent
                             $query->where('user_id', auth()->id());
                         });
                     }
-                })
-
-
-
-
+                }),
         ];
+    }
+
+    public function builder(): Builder
+    {
+        // the WHEN will only run IF there is no value in the order_date filter.
+        return Link::when(
+            !$this->getAppliedFilterWithValue('order_date'),
+            fn ($query) =>
+            $query->withWhereHas('orders')
+        )
+            ->withSum([ // This will get the sum of ALL orders regardless of the filter value
+                'orders as orders_all_time_price'
+            ], 'price')
+            ->withCount([
+                'orders as total_orders',
+            ]);
+        // ->groupBy('site');
     }
 }
